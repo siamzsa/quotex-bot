@@ -8,11 +8,11 @@
   <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <style>
     .title-glow{text-shadow:0 0 10px #34d399,0 0 20px #34d399,0 0 30px #34d399;}
-    @keyframes hueRotate{0%{filter:hue-rotate(0deg);}100%{filter:hue-rotate(360deg);}}
+    @keyframes hueRotate{0%{filter:hue-rotate(0deg);}100%{filter:hue-rotate(360deg);} }
     .color-cycle{animation:hueRotate 4s linear infinite alternate;}
     .signal-call{color:#22c55e;font-weight:600;}
     .signal-put{color:#ef4444;font-weight:600;}
-    @keyframes fadeScaleIn{0%{opacity:0;transform:scale(.8);}100%{opacity:1;transform:scale(1);}}
+    @keyframes fadeScaleIn{0%{opacity:0;transform:scale(.8);}100%{opacity:1;transform:scale(1);} }
     .fade-scale-in{animation:fadeScaleIn .8s ease forwards;}
   </style>
 </head>
@@ -64,27 +64,125 @@
   </div>
 
 <script>
-function signalBoard(){return{
-  selectedTimeframe:'1',
-  markets:['EUR/USD OTC','GBP/USD OTC','USD/JPY OTC','AUD/USD OTC','USD/CHF OTC','USD/CAD OTC','BTC/USD OTC','ETH/USD OTC','EUR/USD','GBP/USD','USD/JPY','AUD/USD','USD/CHF','USD/CAD','EUR/JPY','EUR/GBP','GBP/JPY','NZD/USD'].map(n=>({name:n,selected:false})),
-  signals:[],
-  formatTime(d){return d.toTimeString().slice(0,5);},
-  generateDummyPriceData(m,p){let pr=[100+Math.random()*50];for(let i=1;i<p;i++){pr.push(Math.max(1,pr[i-1]+(Math.random()-0.5)*2));}return pr;},
-  simpleMA(d,per){if(d.length<per)return null;return d.slice(-per).reduce((a,b)=>a+b,0)/per;},
-  generateSignals(){this.signals=[];const tf=this.selectedTimeframe==='60'?'H1':this.selectedTimeframe+'M';let now=new Date();now.setSeconds(0,0);
-    const bars=30; // generate for next 30 minutes, one per minute
-    this.markets.forEach(mk=>{if(!mk.selected)return;const price=this.generateDummyPriceData(mk.name,bars+10);
-      for(let i=0;i<bars;i++){const slice=price.slice(i,i+10);
-        const ma5=this.simpleMA(slice,5),ma10=this.simpleMA(slice,10);
-        if(ma5===null||ma10===null)continue;
-        const dir=ma5>ma10?'CALL':'PUT';
-        const t=new Date(now.getTime()+(i+1)*60000);
-        const text=`${tf};${mk.name.replace(/\//g,'').replace(/\s/g,'')};${this.formatTime(t)};${dir}`;
-        this.signals.push({text,dir});}
-      mk.selected=false;});
-    this.$nextTick(()=>{if(this.signals.length)document.documentElement.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});});
-  }
-};}
+function signalBoard(){
+  return {
+    selectedTimeframe:'1',
+    markets:[
+      'EUR/USD OTC','GBP/USD OTC','USD/JPY OTC','AUD/USD OTC','USD/CHF OTC','USD/CAD OTC',
+      'BTC/USD OTC','ETH/USD OTC','EUR/USD','GBP/USD','USD/JPY','AUD/USD','USD/CHF','USD/CAD',
+      'EUR/JPY','EUR/GBP','GBP/JPY','NZD/USD'
+    ].map(n=>({name:n,selected:false})),
+    signals:[],
+    formatTime(d){ return d.toTimeString().slice(0,5); },
+
+    generateDummyPriceData(m,p){
+      // Generate dummy prices with random walk
+      let pr=[100+Math.random()*50];
+      for(let i=1;i<p;i++){
+        pr.push(Math.max(1,pr[i-1]+(Math.random()-0.5)*2));
+      }
+      return pr;
+    },
+
+    simpleMA(d,per){
+      if(d.length<per) return null;
+      return d.slice(-per).reduce((a,b)=>a+b,0)/per;
+    },
+
+    rsi(data, period=14){
+      if(data.length < period+1) return null;
+      let gains=0, losses=0;
+      for(let i=data.length-period; i < data.length; i++){
+        let diff = data[i] - data[i-1];
+        if(diff>0) gains += diff;
+        else losses -= diff;
+      }
+      if(losses === 0) return 100;
+      let rs = gains / losses;
+      return 100 - (100 / (1 + rs));
+    },
+
+    macd(data, fast=12, slow=26, signal=9){
+      // Simple MACD implementation with EMA approximation via SMA for demo
+      if(data.length < slow+signal) return null;
+      const ema = (arr, length) => {
+        let k = 2/(length+1);
+        let emaArray = [arr.slice(0,length).reduce((a,b)=>a+b,0)/length];
+        for(let i=length; i<arr.length; i++){
+          emaArray.push(arr[i]*k + emaArray[emaArray.length-1]*(1-k));
+        }
+        return emaArray;
+      }
+      let emaFast = ema(data, fast);
+      let emaSlow = ema(data, slow);
+      let macdLine = [];
+      for(let i=0; i<emaSlow.length; i++){
+        macdLine.push(emaFast[i+(slow - fast)] - emaSlow[i]);
+      }
+      let signalLine = ema(macdLine, signal);
+      if(signalLine.length===0) return null;
+      return macdLine[macdLine.length-1] - signalLine[signalLine.length-1];
+    },
+
+    generateSignals(){
+      this.signals = [];
+      const tf = this.selectedTimeframe==='60'?'H1':this.selectedTimeframe+'M';
+      let now = new Date();
+      now.setSeconds(0,0);
+      const bars = 30; // next 30 minutes, one per minute
+
+      this.markets.forEach(mk=>{
+        if(!mk.selected) return;
+
+        const price = this.generateDummyPriceData(mk.name, bars+50); // generate more for indicators
+
+        for(let i=0; i<bars; i++){
+          const slice = price.slice(i,i+50);
+
+          // Moving Averages
+          const ma5 = this.simpleMA(slice, 5);
+          const ma10 = this.simpleMA(slice, 10);
+          if(ma5 === null || ma10 === null) continue;
+
+          // RSI
+          const rsiVal = this.rsi(slice, 14);
+          if(rsiVal === null) continue;
+
+          // MACD Histogram
+          const macdHist = this.macd(slice);
+          if(macdHist === null) continue;
+
+          // Decision Logic:
+          // CALL if: ma5 > ma10 AND RSI between 30-70 AND macdHist > 0
+          // PUT if: ma5 < ma10 AND RSI between 30-70 AND macdHist < 0
+          // Override: if RSI < 30 -> Strong Oversold -> CALL
+          // Override: if RSI > 70 -> Strong Overbought -> PUT
+
+          let dir = 'PUT';
+          if(rsiVal < 30){
+            dir = 'CALL';
+          } else if(rsiVal > 70){
+            dir = 'PUT';
+          } else if(ma5 > ma10 && macdHist > 0){
+            dir = 'CALL';
+          } else if(ma5 < ma10 && macdHist < 0){
+            dir = 'PUT';
+          }
+
+          const t = new Date(now.getTime() + (i+1)*60000);
+          const text = `${tf};${mk.name.replace(/\//g,'').replace(/\s/g,'')};${this.formatTime(t)};${dir}`;
+          this.signals.push({text, dir});
+        }
+
+        mk.selected = false;
+      });
+
+      this.$nextTick(()=>{
+        if(this.signals.length) document.documentElement.scrollTo({top:document.body.scrollHeight, behavior:'smooth'});
+      });
+    }
+  };
+}
 </script>
 </body>
 </html>

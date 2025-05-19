@@ -1,201 +1,130 @@
-Code, [5/13/2025 3:08 AM]
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>GHOST SIGNAL-X</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TRADER SIAM X - Quotex Signal Board</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <style>
-    body {
-      background-color: #000;
-      color: #0f0;
-      font-family: monospace;
-      padding: 20px;
+    .title-glow {
+      text-shadow: 0 0 10px #34d399, 0 0 20px #34d399, 0 0 30px #34d399;
     }
-    h1 {
-      text-align: center;
-      color: #0f0;
-      text-shadow: 0 0 5px #0f0;
+    @keyframes hueRotate {
+      0% {
+        filter: hue-rotate(0deg);
+      }
+      100% {
+        filter: hue-rotate(360deg);
+      }
     }
-    .board {
-      border: 2px solid #0f0;
-      padding: 20px;
-      border-radius: 10px;
-      background-color: #111;
-      box-shadow: 0 0 20px #0f0;
-      max-width: 500px;
-      margin: auto;
-    }
-    label, select, input {
-      display: block;
-      margin: 10px 0;
-      background: #000;
-      color: #0f0;
-      border: 1px solid #0f0;
-      padding: 5px;
-    }
-    button {
-      background: #0f0;
-      color: #000;
-      font-weight: bold;
-      padding: 10px;
-      margin-top: 10px;
-      border: none;
-      cursor: pointer;
-      width: 100%;
-    }
-    .signalBox {
-      margin-top: 20px;
-    }
-    .signalItem {
-      background: #001100;
-      border-left: 5px solid #0f0;
-      padding: 10px;
-      margin: 5px 0;
-    }
-    .buy {
-      color: #00ff00;
-    }
-    .sell {
-      color: #ff4444;
-    }
-    .confidence {
-      color: #ffcc00;
-      font-weight: bold;
+    .color-cycle {
+      animation: hueRotate 4s linear infinite alternate;
     }
   </style>
 </head>
-<body>
-  <h1>GHOST SIGNAL-X</h1>
-  <div class="board">
-    <label>Start Time:</label>
-    <input type="time" id="startTime" value="00:00">
+<body class="min-h-screen bg-gray-900 text-white flex flex-col items-center py-10 px-4">
+  <h1 class="text-4xl font-extrabold mb-8 text-green-400 title-glow">TRADER&nbsp;SIAM&nbsp;X</h1>
 
-    <label>End Time:</label>
-    <input type="time" id="endTime" value="23:59">
+  <div
+    x-data="signalBoard()"
+    class="w-full max-w-6xl bg-gray-800 rounded-2xl shadow-lg p-6"
+  >
+    <h3 class="text-xl font-semibold mb-4 color-cycle">SELECT MARKETS</h3>
+    <div
+      class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6 max-h-96 overflow-y-auto pr-2 text-xs"
+    >
+      <template x-for="(market, index) in markets" :key="index">
+        <label
+          class="flex items-center space-x-2 bg-gray-700 rounded-lg p-2 cursor-pointer hover:bg-gray-600 transition"
+        >
+          <input
+            type="checkbox"
+            x-model="market.selected"
+            class="h-4 w-4 text-green-500 rounded focus:ring-0"
+          />
+          <span x-text="market.name" class="flex-1"></span>
+        </label>
+      </template>
+    </div>
 
-    <label>Market:</label>
-    <select id="market">
-      <option value="EUR/USD">EUR/USD</option>
-      <option value="USD/JPY">USD/JPY</option>
-      <option value="GBP/USD">GBP/USD</option>
-      <option value="AUD/USD">AUD/USD</option>
-      <option value="USD/CAD">USD/CAD</option>
-      <option value="USD/CHF">USD/CHF</option>
-      <option value="NZD/USD">NZD/USD</option>
-      <option value="EUR/GBP">EUR/GBP</option>
-      <option value="BTC/USD">BTC/USD</option>
-      <option value="ETH/USD">ETH/USD</option>
-      <option value="OTC EUR/USD">OTC EUR/USD</option>
-      <option value="OTC GBP/USD">OTC GBP/USD</option>
-      <option value="OTC USD/JPY">OTC USD/JPY</option>
-    </select>
+    <button
+      @click="generateSignals"
+      class="w-full py-3 bg-green-600 hover:bg-green-500 rounded-xl text-lg font-semibold transition"
+    >
+      Generate Signals
+    </button>
 
-    <label>Timeframe:</label>
-    <select id="timeframe">
-      <option value="30s">30 Seconds</option>
-      <option value="1min">1 Minute</option>
-      <option value="3min">3 Minutes</option>
-      <option value="5min">5 Minutes</option>
-    </select>
-
-    <button onclick="generateSignals()">Generate Signals</button>
-
-    <div id="signalBox" class="signalBox">
-      Waiting for signals...
+    <div
+      x-show="signals.length"
+      x-transition.opacity.duration.500ms
+      class="mt-8 space-y-4"
+    >
+      <h3 class="text-xl font-semibold">Generated Signals</h3>
+      <template x-for="(sig, idx) in signals" :key="idx">
+        <div
+          x-transition.scale.duration.400ms
+          class="bg-gray-700 rounded-xl p-4 flex items-center justify-between"
+        >
+          <span class="text-lg">
+            <template x-if="true">
+              <span x-text="sig.split(': ')[0] + ':'"></span>
+              <span
+                x-text="sig.split(': ')[1]"
+                :class="sig.includes('BUY') ? 'text-green-400 font-bold' : 'text-red-500 font-bold'"
+                class="ml-1"
+              ></span>
+            </template>
+          </span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="2"
+            stroke="currentColor"
+            class="w-6 h-6 animate-ping"
+            :class="sig.includes('BUY') ? 'text-green-400' : 'text-red-500'"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M4.5 12.75l6 6 9-13.5"
+            />
+          </svg>
+        </div>
+      </template>
     </div>
   </div>
 
   <script>
-    function pad(n) {
-      return n < 10 ? "0" + n : n;
-    }
-
-    function calculateMovingAverage(data, period) {
-      const sum = data.slice(-period).reduce((acc, val) => acc + val, 0);
-      return sum / period;
-    }
-
-    function calculateRSI(data, period) {
-      let gains = 0;
-      let losses = 0;
-      for (let i = 1; i < data.length; i++) {
-        const diff = data[i] - data[i - 1];
-        if (diff > 0) gains += diff;
-        else losses -= diff;
-      }
-      const avgGain = gains / period;
-      const avgLoss = losses / period;
-      const rs = avgGain / avgLoss || 1;
-      return 100 - (100 / (1 + rs));
-    }
-
-    function getConfidenceLevel() {
-      return Math.floor(Math.random() * (99 - 80 + 1)) + 80;
-    }
-
-    function generateSignals() {
-      const start = document.getElementById('startTime').value;
-      const end = document.getElementById('endTime').value;
-      const market = document.getElementById('market').value;
-      const timeframe = document.getElementById('timeframe').value;
-      const signalBox = document.getElementById('signalBox');
-      signalBox.innerHTML = '';
-
-      if (!start || !end) {
-        signalBox.innerHTML = <div class="signalItem">Please set valid start and end times.</div>;
-        return;
-      }
-
-      let [sh, sm] = start.split(':').map(Number);
-      let [eh, em] = end.split(':').map(Number);
-
-      const prices = [1.1234, 1.1240, 1.1250, 1.1260, 1.1275, 1.1290, 1.1285, 1.1300, 1.1320];
-      let signals = [];
-      let sn = 1;
-
-Code, [5/13/2025 3:08 AM]
-while (sh < eh || (sh === eh && sm <= em)) {
-        const timeStr = ${pad(sh)}:${pad(sm)};
-        const ma = calculateMovingAverage(prices, 3);
-        const rsi = calculateRSI(prices, 14);
-
-        let signal = "";
-        let isBuy = false;
-
-        if (rsi < 30) {
-          signal = "BUY ↑";
-          isBuy = true;
-        } else if (rsi > 70) {
-          signal = "SELL ↓";
-          isBuy = false;
-        } else if (prices[prices.length - 1] > ma) {
-          signal = "BUY ↑";
-          isBuy = true;
-        } else {
-          signal = "SELL ↓";
-          isBuy = false;
-        }
-
-        const confidence = getConfidenceLevel();
-        const signalHTML = 
-          <div class="signalItem">
-            <b>#${sn++}</b> — <span>${timeStr}</span> — 
-            <span class="${isBuy ? 'buy' : 'sell'}"><b>${signal}</b></span> 
-            (${market} / ${timeframe}) — 
-            <span class="confidence">${confidence}%</span>
-          </div>
-        ;
-        signals.push(signalHTML);
-
-        sm++;
-        if (sm >= 60) {
-          sm = 0;
-          sh++;
-        }
-
-        prices.push(prices[prices.length - 1] + (Math.random() * 0.001 - 0.0005));
-      }
-
-      signalBox.innerHTML = signals.join('');
+    function signalBoard() {
+      return {
+        markets: [
+          'EUR/USD OTC', 'GBP/USD OTC', 'USD/JPY OTC', 'AUD/USD OTC', 'USD/CHF OTC',
+          'USD/CAD OTC', 'BTC/USD OTC', 'ETH/USD OTC',
+          'EUR/USD', 'GBP/USD', 'USD/JPY', 'AUD/USD', 'USD/CHF',
+          'USD/CAD', 'EUR/JPY', 'EUR/GBP', 'GBP/JPY', 'NZD/USD'
+        ].map(m => ({ name: m, selected: false })),
+        signals: [],
+        generateSignals() {
+          this.signals = [];
+          this.markets.forEach((m) => {
+            if (m.selected) {
+              const dir = Math.random() > 0.5 ? 'BUY' : 'SELL';
+              this.signals.push(`${m.name}: ${dir}`);
+              m.selected = false;
+            }
+          });
+          this.$nextTick(() => {
+            if (this.signals.length) {
+              document.querySelector('html').scrollTo({
+                top: document.body.scrollHeight,
+                behavior: 'smooth',
+              });
+            }
+          });
+        },
+      };
     }
   </script>
 </body>

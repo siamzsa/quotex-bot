@@ -29,9 +29,41 @@
       color: #ef4444; /* red-500 */
       font-weight: 600;
     }
+
+    /* Custom fade & scale animation */
+    @keyframes fadeScaleIn {
+      0% {
+        opacity: 0;
+        transform: scale(0.8);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+    .fade-scale-in {
+      animation: fadeScaleIn 0.8s ease forwards;
+    }
   </style>
 </head>
-<body class="min-h-screen bg-gray-900 text-white flex flex-col items-center py-10 px-4">
+<body class="min-h-screen bg-gray-900 text-white flex flex-col items-center py-10 px-4" x-data="{ showPopup: true }">
+  
+  <!-- Popup -->
+  <div
+    x-show="showPopup"
+    x-transition
+    class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50"
+  >
+    <div class="bg-gray-800 rounded-xl p-6 w-80 max-w-full relative text-center text-white shadow-lg">
+      <button 
+        @click="showPopup = false" 
+        class="absolute top-3 right-3 text-gray-400 hover:text-gray-200 font-bold text-xl focus:outline-none"
+        aria-label="Close popup"
+      >&times;</button>
+      <p class="text-lg font-semibold fade-scale-in">Free for 7 days trial</p>
+    </div>
+  </div>
+
   <h1 class="text-4xl font-extrabold mb-8 text-green-400 title-glow">TRADER&nbsp;SIAM&nbsp;X</h1>
 
   <div x-data="signalBoard()" class="w-full max-w-6xl bg-gray-800 rounded-2xl shadow-lg p-6">

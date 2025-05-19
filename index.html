@@ -21,76 +21,60 @@
     .color-cycle {
       animation: hueRotate 4s linear infinite alternate;
     }
+    .signal-call {
+      color: #22c55e; /* green-500 */
+      font-weight: 600;
+    }
+    .signal-put {
+      color: #ef4444; /* red-500 */
+      font-weight: 600;
+    }
   </style>
 </head>
 <body class="min-h-screen bg-gray-900 text-white flex flex-col items-center py-10 px-4">
   <h1 class="text-4xl font-extrabold mb-8 text-green-400 title-glow">TRADER&nbsp;SIAM&nbsp;X</h1>
 
-  <div
-    x-data="signalBoard()"
-    class="w-full max-w-6xl bg-gray-800 rounded-2xl shadow-lg p-6"
-  >
+  <div x-data="signalBoard()" class="w-full max-w-6xl bg-gray-800 rounded-2xl shadow-lg p-6">
+    
+    <!-- Timeframe select -->
+    <div class="mb-6">
+      <label for="timeframe" class="block mb-2 font-semibold text-lg">Select Timeframe (Minutes per candle):</label>
+      <select id="timeframe" x-model="selectedTimeframe" class="w-32 bg-gray-700 rounded-lg p-2 text-white focus:outline-none">
+        <option value="1">1</option>
+        <option value="5">5</option>
+        <option value="15">15</option>
+        <option value="30">30</option>
+        <option value="60">60</option>
+      </select>
+    </div>
+
     <h3 class="text-xl font-semibold mb-4 color-cycle">SELECT MARKETS</h3>
-    <div
-      class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6 max-h-96 overflow-y-auto pr-2 text-xs"
-    >
+
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6 max-h-96 overflow-y-auto pr-2 text-xs">
       <template x-for="(market, index) in markets" :key="index">
-        <label
-          class="flex items-center space-x-2 bg-gray-700 rounded-lg p-2 cursor-pointer hover:bg-gray-600 transition"
-        >
-          <input
-            type="checkbox"
-            x-model="market.selected"
-            class="h-4 w-4 text-green-500 rounded focus:ring-0"
-          />
+        <label class="flex items-center space-x-2 bg-gray-700 rounded-lg p-2 cursor-pointer hover:bg-gray-600 transition">
+          <input type="checkbox" x-model="market.selected" class="h-4 w-4 text-green-500 rounded focus:ring-0" />
           <span x-text="market.name" class="flex-1"></span>
         </label>
       </template>
     </div>
 
-    <button
-      @click="generateSignals"
-      class="w-full py-3 bg-green-600 hover:bg-green-500 rounded-xl text-lg font-semibold transition"
-    >
+    <button @click="generateSignals" class="w-full py-3 bg-green-600 hover:bg-green-500 rounded-xl text-lg font-semibold transition">
       Generate Signals
     </button>
 
-    <div
-      x-show="signals.length"
-      x-transition.opacity.duration.500ms
-      class="mt-8 space-y-4"
-    >
+    <div x-show="signals.length" x-transition.opacity.duration.500ms class="mt-8 space-y-4 max-h-96 overflow-y-auto">
       <h3 class="text-xl font-semibold">Generated Signals</h3>
       <template x-for="(sig, idx) in signals" :key="idx">
-        <div
-          x-transition.scale.duration.400ms
-          class="bg-gray-700 rounded-xl p-4 flex items-center justify-between"
-        >
+        <div x-transition.scale.duration.400ms class="bg-gray-700 rounded-xl p-4 flex items-center justify-between">
           <span class="text-lg">
-            <template x-if="true">
-              <span x-text="sig.split(': ')[0] + ':'"></span>
-              <span
-                x-text="sig.split(': ')[1]"
-                :class="sig.includes('BUY') ? 'text-green-400 font-bold' : 'text-red-500 font-bold'"
-                class="ml-1"
-              ></span>
+            <template x-if="sig.dir === 'CALL'">
+              <span class="signal-call" x-text="sig.text.replace(/CALL/, 'CALL')"></span>
+            </template>
+            <template x-if="sig.dir === 'PUT'">
+              <span class="signal-put" x-text="sig.text.replace(/PUT/, 'PUT')"></span>
             </template>
           </span>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke-width="2"
-            stroke="currentColor"
-            class="w-6 h-6 animate-ping"
-            :class="sig.includes('BUY') ? 'text-green-400' : 'text-red-500'"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M4.5 12.75l6 6 9-13.5"
-            />
-          </svg>
         </div>
       </template>
     </div>
@@ -99,28 +83,55 @@
   <script>
     function signalBoard() {
       return {
+        selectedTimeframe: '1',
         markets: [
-          'EUR/USD OTC', 'GBP/USD OTC', 'USD/JPY OTC', 'AUD/USD OTC', 'USD/CHF OTC',
-          'USD/CAD OTC', 'BTC/USD OTC', 'ETH/USD OTC',
-          'EUR/USD', 'GBP/USD', 'USD/JPY', 'AUD/USD', 'USD/CHF',
-          'USD/CAD', 'EUR/JPY', 'EUR/GBP', 'GBP/JPY', 'NZD/USD'
-        ].map(m => ({ name: m, selected: false })),
+          'EUR/USD OTC', 'GBP/USD OTC', 'USD/JPY OTC', 'AUD/USD OTC', 'USD/CHF OTC', 'USD/CAD OTC', 'BTC/USD OTC', 'ETH/USD OTC',
+          'EUR/USD', 'GBP/USD', 'USD/JPY', 'AUD/USD', 'USD/CHF', 'USD/CAD', 'EUR/JPY', 'EUR/GBP', 'GBP/JPY', 'NZD/USD'
+        ].map(name => ({ name, selected: false })),
         signals: [],
+        
+        // Helper to format time as HH:mm
+        formatTime(date) {
+          const h = date.getHours().toString().padStart(2, '0');
+          const m = date.getMinutes().toString().padStart(2, '0');
+          return `${h}:${m}`;
+        },
+
         generateSignals() {
           this.signals = [];
-          this.markets.forEach((m) => {
+
+          const timeframeLabel = this.selectedTimeframe === '60' ? 'H1' : 'M' + this.selectedTimeframe;
+
+          // Start time: current time rounded down to nearest minute
+          let now = new Date();
+          now.setSeconds(0, 0);
+
+          const signalCount = 30; // 30 signals per market, 1 per minute for 30 minutes
+
+          this.markets.forEach(m => {
             if (m.selected) {
-              const dir = Math.random() > 0.5 ? 'BUY' : 'SELL';
-              this.signals.push(`${m.name}: ${dir}`);
+              // Market name without slashes for signal format
+              const marketNameFormatted = m.name.replace(/\//g, '').replace(' ', '');
+
+              for (let i = 0; i < signalCount; i++) {
+                let signalTime = new Date(now.getTime() + i * 60000); // i minutes after now
+                let timeStr = this.formatTime(signalTime);
+
+                const dir = Math.random() > 0.5 ? 'CALL' : 'PUT';
+
+                // Format: TIMEFRAME;MARKET;HH:mm;CALL/PUT
+                const text = `${timeframeLabel};${marketNameFormatted};${timeStr};${dir}`;
+
+                this.signals.push({ text, dir });
+              }
+
               m.selected = false;
             }
           });
+
           this.$nextTick(() => {
             if (this.signals.length) {
-              document.querySelector('html').scrollTo({
-                top: document.body.scrollHeight,
-                behavior: 'smooth',
-              });
+              document.querySelector('html').scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
             }
           });
         },

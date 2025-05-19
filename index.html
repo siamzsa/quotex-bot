@@ -7,59 +7,20 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <style>
-    .title-glow {
-      text-shadow: 0 0 10px #34d399, 0 0 20px #34d399, 0 0 30px #34d399;
-    }
-    @keyframes hueRotate {
-      0% {
-        filter: hue-rotate(0deg);
-      }
-      100% {
-        filter: hue-rotate(360deg);
-      }
-    }
-    .color-cycle {
-      animation: hueRotate 4s linear infinite alternate;
-    }
-    .signal-call {
-      color: #22c55e; /* green-500 */
-      font-weight: 600;
-    }
-    .signal-put {
-      color: #ef4444; /* red-500 */
-      font-weight: 600;
-    }
-
-    /* Custom fade & scale animation */
-    @keyframes fadeScaleIn {
-      0% {
-        opacity: 0;
-        transform: scale(0.8);
-      }
-      100% {
-        opacity: 1;
-        transform: scale(1);
-      }
-    }
-    .fade-scale-in {
-      animation: fadeScaleIn 0.8s ease forwards;
-    }
+    .title-glow{text-shadow:0 0 10px #34d399,0 0 20px #34d399,0 0 30px #34d399;}
+    @keyframes hueRotate{0%{filter:hue-rotate(0deg);}100%{filter:hue-rotate(360deg);}}
+    .color-cycle{animation:hueRotate 4s linear infinite alternate;}
+    .signal-call{color:#22c55e;font-weight:600;}
+    .signal-put{color:#ef4444;font-weight:600;}
+    @keyframes fadeScaleIn{0%{opacity:0;transform:scale(.8);}100%{opacity:1;transform:scale(1);}}
+    .fade-scale-in{animation:fadeScaleIn .8s ease forwards;}
   </style>
 </head>
-<body class="min-h-screen bg-gray-900 text-white flex flex-col items-center py-10 px-4" x-data="{ showPopup: true }">
-  
+<body class="min-h-screen bg-gray-900 text-white flex flex-col items-center py-10 px-4" x-data="{showPopup:true}">
   <!-- Popup -->
-  <div
-    x-show="showPopup"
-    x-transition
-    class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50"
-  >
+  <div x-show="showPopup" x-transition class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
     <div class="bg-gray-800 rounded-xl p-6 w-80 max-w-full relative text-center text-white shadow-lg">
-      <button 
-        @click="showPopup = false" 
-        class="absolute top-3 right-3 text-gray-400 hover:text-gray-200 font-bold text-xl focus:outline-none"
-        aria-label="Close popup"
-      >&times;</button>
+      <button @click="showPopup=false" class="absolute top-3 right-3 text-gray-400 hover:text-gray-200 font-bold text-xl focus:outline-none" aria-label="Close popup">&times;</button>
       <p class="text-lg font-semibold fade-scale-in">Free for 7 days trial</p>
     </div>
   </div>
@@ -67,7 +28,6 @@
   <h1 class="text-4xl font-extrabold mb-8 text-green-400 title-glow">TRADER&nbsp;SIAM&nbsp;X</h1>
 
   <div x-data="signalBoard()" class="w-full max-w-6xl bg-gray-800 rounded-2xl shadow-lg p-6">
-    
     <!-- Timeframe select -->
     <div class="mb-6">
       <label for="timeframe" class="block mb-2 font-semibold text-lg">Select Timeframe (Minutes per candle):</label>
@@ -83,7 +43,7 @@
     <h3 class="text-xl font-semibold mb-4 color-cycle">SELECT MARKETS</h3>
 
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6 max-h-96 overflow-y-auto pr-2 text-xs">
-      <template x-for="(market, index) in markets" :key="index">
+      <template x-for="(market,index) in markets" :key="index">
         <label class="flex items-center space-x-2 bg-gray-700 rounded-lg p-2 cursor-pointer hover:bg-gray-600 transition">
           <input type="checkbox" x-model="market.selected" class="h-4 w-4 text-green-500 rounded focus:ring-0" />
           <span x-text="market.name" class="flex-1"></span>
@@ -91,113 +51,40 @@
       </template>
     </div>
 
-    <button @click="generateSignals" class="w-full py-3 bg-green-600 hover:bg-green-500 rounded-xl text-lg font-semibold transition">
-      Generate Signals
-    </button>
+    <button @click="generateSignals" class="w-full py-3 bg-green-600 hover:bg-green-500 rounded-xl text-lg font-semibold transition">Generate Signals (30 min)</button>
 
     <div x-show="signals.length" x-transition.opacity.duration.500ms class="mt-8 space-y-4 max-h-96 overflow-y-auto">
-      <h3 class="text-xl font-semibold">Generated Signals</h3>
-      <template x-for="(sig, idx) in signals" :key="idx">
+      <h3 class="text-xl font-semibold">Generated Signals (next 30 minutes)</h3>
+      <template x-for="(sig,idx) in signals" :key="idx">
         <div x-transition.scale.duration.400ms class="bg-gray-700 rounded-xl p-4 flex items-center justify-between">
-          <span class="text-lg">
-            <template x-if="sig.dir === 'CALL'">
-              <span class="signal-call" x-text="sig.text.replace(/CALL/, 'CALL')"></span>
-            </template>
-            <template x-if="sig.dir === 'PUT'">
-              <span class="signal-put" x-text="sig.text.replace(/PUT/, 'PUT')"></span>
-            </template>
-          </span>
+          <span class="text-lg" :class="sig.dir==='CALL'?'signal-call':'signal-put'" x-text="sig.text"></span>
         </div>
       </template>
     </div>
   </div>
 
-  <script>
-    function signalBoard() {
-      return {
-        selectedTimeframe: '1',
-        markets: [
-          'EUR/USD OTC', 'GBP/USD OTC', 'USD/JPY OTC', 'AUD/USD OTC', 'USD/CHF OTC', 'USD/CAD OTC', 'BTC/USD OTC', 'ETH/USD OTC',
-          'EUR/USD', 'GBP/USD', 'USD/JPY', 'AUD/USD', 'USD/CHF', 'USD/CAD', 'EUR/JPY', 'EUR/GBP', 'GBP/JPY', 'NZD/USD'
-        ].map(name => ({ name, selected: false })),
-        signals: [],
-        
-        // Helper to format time as HH:mm
-        formatTime(date) {
-          const h = date.getHours().toString().padStart(2, '0');
-          const m = date.getMinutes().toString().padStart(2, '0');
-          return `${h}:${m}`;
-        },
-
-        // Dummy historical price data generator for demo (random walk)
-        generateDummyPriceData(market, points) {
-          let prices = [100 + Math.random() * 50]; // start price 100~150
-          for (let i = 1; i < points; i++) {
-            let change = (Math.random() - 0.5) * 2; // -1 to +1
-            prices.push(Math.max(1, prices[i-1] + change));
-          }
-          return prices;
-        },
-
-        // Simple Moving Average calculation
-        simpleMA(data, period) {
-          if (data.length < period) return null;
-          let sum = 0;
-          for(let i = data.length - period; i < data.length; i++) {
-            sum += data[i];
-          }
-          return sum / period;
-        },
-
-        // Generate signals with a simple MA crossover strategy for demonstration
-        generateSignals() {
-          this.signals = [];
-          const timeframeLabel = this.selectedTimeframe === '60' ? 'H1' : this.selectedTimeframe + 'M';
-
-          let now = new Date();
-          now.setSeconds(0, 0);
-
-          const signalCount = 30; // 30 signals per market for next 30 minutes
-
-          this.markets.forEach(market => {
-            if (!market.selected) return;
-
-            // Generate dummy price data for MA calc (e.g. last 20 candles)
-            const priceData = this.generateDummyPriceData(market.name, 30);
-
-            for (let i = 10; i < signalCount; i++) {
-              const maShort = this.simpleMA(priceData.slice(0, i), 5); // 5 period MA
-              const maLong = this.simpleMA(priceData.slice(0, i), 10); // 10 period MA
-
-              if (maShort === null || maLong === null) continue;
-
-              // Signal logic: if short MA crosses above long MA => CALL signal, else PUT
-              const dir = maShort > maLong ? 'CALL' : 'PUT';
-
-              // Format time for signal
-              let signalTime = new Date(now.getTime() + i * 60000);
-              let timeStr = this.formatTime(signalTime);
-
-              // Format market name (remove slashes and spaces)
-              const marketNameFormatted = market.name.replace(/\//g, '').replace(/\s/g, '');
-
-              const text = `${timeframeLabel};${marketNameFormatted};${timeStr};${dir}`;
-
-              this.signals.push({ text, dir });
-            }
-
-            // Reset checkbox
-            market.selected = false;
-          });
-
-          this.$nextTick(() => {
-            if (this.signals.length) {
-              document.querySelector('html').scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-            }
-          });
-        },
-      };
-    }
-  </script>
+<script>
+function signalBoard(){return{
+  selectedTimeframe:'1',
+  markets:['EUR/USD OTC','GBP/USD OTC','USD/JPY OTC','AUD/USD OTC','USD/CHF OTC','USD/CAD OTC','BTC/USD OTC','ETH/USD OTC','EUR/USD','GBP/USD','USD/JPY','AUD/USD','USD/CHF','USD/CAD','EUR/JPY','EUR/GBP','GBP/JPY','NZD/USD'].map(n=>({name:n,selected:false})),
+  signals:[],
+  formatTime(d){return d.toTimeString().slice(0,5);},
+  generateDummyPriceData(m,p){let pr=[100+Math.random()*50];for(let i=1;i<p;i++){pr.push(Math.max(1,pr[i-1]+(Math.random()-0.5)*2));}return pr;},
+  simpleMA(d,per){if(d.length<per)return null;return d.slice(-per).reduce((a,b)=>a+b,0)/per;},
+  generateSignals(){this.signals=[];const tf=this.selectedTimeframe==='60'?'H1':this.selectedTimeframe+'M';let now=new Date();now.setSeconds(0,0);
+    const bars=30; // generate for next 30 minutes, one per minute
+    this.markets.forEach(mk=>{if(!mk.selected)return;const price=this.generateDummyPriceData(mk.name,bars+10);
+      for(let i=0;i<bars;i++){const slice=price.slice(i,i+10);
+        const ma5=this.simpleMA(slice,5),ma10=this.simpleMA(slice,10);
+        if(ma5===null||ma10===null)continue;
+        const dir=ma5>ma10?'CALL':'PUT';
+        const t=new Date(now.getTime()+(i+1)*60000);
+        const text=`${tf};${mk.name.replace(/\//g,'').replace(/\s/g,'')};${this.formatTime(t)};${dir}`;
+        this.signals.push({text,dir});}
+      mk.selected=false;});
+    this.$nextTick(()=>{if(this.signals.length)document.documentElement.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});});
+  }
+};}
+</script>
 </body>
 </html>

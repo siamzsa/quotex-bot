@@ -97,36 +97,65 @@
           return `${h}:${m}`;
         },
 
+        // Dummy historical price data generator for demo (random walk)
+        generateDummyPriceData(market, points) {
+          let prices = [100 + Math.random() * 50]; // start price 100~150
+          for (let i = 1; i < points; i++) {
+            let change = (Math.random() - 0.5) * 2; // -1 to +1
+            prices.push(Math.max(1, prices[i-1] + change));
+          }
+          return prices;
+        },
+
+        // Simple Moving Average calculation
+        simpleMA(data, period) {
+          if (data.length < period) return null;
+          let sum = 0;
+          for(let i = data.length - period; i < data.length; i++) {
+            sum += data[i];
+          }
+          return sum / period;
+        },
+
+        // Generate signals with a simple MA crossover strategy for demonstration
         generateSignals() {
           this.signals = [];
+          const timeframeLabel = this.selectedTimeframe === '60' ? 'H1' : this.selectedTimeframe + 'M';
 
-          const timeframeLabel = this.selectedTimeframe === '60' ? 'H1' : 'M' + this.selectedTimeframe;
-
-          // Start time: current time rounded down to nearest minute
           let now = new Date();
           now.setSeconds(0, 0);
 
-          const signalCount = 30; // 30 signals per market, 1 per minute for 30 minutes
+          const signalCount = 30; // 30 signals per market for next 30 minutes
 
-          this.markets.forEach(m => {
-            if (m.selected) {
-              // Market name without slashes for signal format
-              const marketNameFormatted = m.name.replace(/\//g, '').replace(' ', '');
+          this.markets.forEach(market => {
+            if (!market.selected) return;
 
-              for (let i = 0; i < signalCount; i++) {
-                let signalTime = new Date(now.getTime() + i * 60000); // i minutes after now
-                let timeStr = this.formatTime(signalTime);
+            // Generate dummy price data for MA calc (e.g. last 20 candles)
+            const priceData = this.generateDummyPriceData(market.name, 30);
 
-                const dir = Math.random() > 0.5 ? 'CALL' : 'PUT';
+            for (let i = 10; i < signalCount; i++) {
+              const maShort = this.simpleMA(priceData.slice(0, i), 5); // 5 period MA
+              const maLong = this.simpleMA(priceData.slice(0, i), 10); // 10 period MA
 
-                // Format: TIMEFRAME;MARKET;HH:mm;CALL/PUT
-                const text = `${timeframeLabel};${marketNameFormatted};${timeStr};${dir}`;
+              if (maShort === null || maLong === null) continue;
 
-                this.signals.push({ text, dir });
-              }
+              // Signal logic: if short MA crosses above long MA => CALL signal, else PUT
+              const dir = maShort > maLong ? 'CALL' : 'PUT';
 
-              m.selected = false;
+              // Format time for signal
+              let signalTime = new Date(now.getTime() + i * 60000);
+              let timeStr = this.formatTime(signalTime);
+
+              // Format market name (remove slashes and spaces)
+              const marketNameFormatted = market.name.replace(/\//g, '').replace(/\s/g, '');
+
+              const text = `${timeframeLabel};${marketNameFormatted};${timeStr};${dir}`;
+
+              this.signals.push({ text, dir });
             }
+
+            // Reset checkbox
+            market.selected = false;
           });
 
           this.$nextTick(() => {

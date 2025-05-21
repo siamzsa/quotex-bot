@@ -22,7 +22,25 @@
   <div x-show="showPopup" x-transition class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
     <div class="bg-gray-800 rounded-xl p-6 w-80 max-w-full relative text-center text-white shadow-lg">
       <button @click="showPopup=false" class="absolute top-3 right-3 text-gray-400 hover:text-gray-200 font-bold text-xl focus:outline-none" aria-label="Close popup">&times;</button>
-      <p class="text-lg font-semibold fade-scale-in">Free for 3 days trial</p>
+      <p class="text-lg font-semibold fade-scale-in"><!-- Popup -->
+<div x-show="showPopup" x-transition class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+  <div class="bg-gray-800 rounded-xl p-6 w-96 max-w-full relative text-center text-white shadow-lg">
+    <button @click="showPopup=false" class="absolute top-3 right-3 text-gray-400 hover:text-gray-200 font-bold text-xl focus:outline-none" aria-label="Close popup">&times;</button>
+
+    <p class="text-base font-semibold fade-scale-in leading-relaxed">
+      বটের একুরেসি ৮০ - ৯৫% করা হয়েছে। <br>
+      ৭ ঘণ্টা পরে BOT এক্সপায়ার হয়ে যাবে। <br>
+      যদি আপনি BOT ইউজ করতে চান তাহলে VIP তে ঢুকতে হবে। <br>
+      VIP তে ঢোকার জন্য সাপোর্ট আইডিতে মেসেজ করুন।
+    </p>
+
+    <button onclick="window.open('https://t.me/BENZ_RAKIB', '_blank')"
+            class="mt-4 inline-flex items-center justify-center px-6 py-2 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white font-semibold text-sm rounded-full shadow hover:scale-105 transition transform">
+      সাপোর্টে মেসেজ করুন
+    </button>
+  </div>
+</div>
+</p>
     </div>
   </div>
 

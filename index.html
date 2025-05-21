@@ -17,6 +17,7 @@
   </style>
 </head>
 <body class="min-h-screen bg-gray-900 text-white flex flex-col items-center py-10 px-4" x-data="{showPopup:true}">
+
   <!-- Popup -->
   <div x-show="showPopup" x-transition class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
     <div class="bg-gray-800 rounded-xl p-6 w-80 max-w-full relative text-center text-white shadow-lg">
@@ -63,126 +64,121 @@
     </div>
   </div>
 
-<script>
-function signalBoard(){
-  return {
-    selectedTimeframe:'1',
-    markets:[
-      'EUR/USD OTC','GBP/USD OTC','USD/JPY OTC','AUD/USD OTC','USD/CHF OTC','USD/CAD OTC',
-      'BTC/USD OTC','ETH/USD OTC','EUR/USD','GBP/USD','USD/JPY','AUD/USD','USD/CHF','USD/CAD',
-      'EUR/JPY','EUR/GBP','GBP/JPY','NZD/USD'
-    ].map(n=>({name:n,selected:false})),
-    signals:[],
-    formatTime(d){ return d.toTimeString().slice(0,5); },
+  <!-- Developer ID Button -->
+  <div class="mt-10 -mb-2 flex justify-center w-full">
+    <button onclick="window.open('https://t.me/TRADERSIAMX', '_blank')"
+            class="relative inline-flex items-center justify-center px-8 py-3 bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 text-white font-semibold text-base rounded-full shadow-lg transition-transform transform hover:scale-105 hover:shadow-yellow-400/40 animate-pulse group overflow-hidden">
+      <span class="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition duration-300 ease-in-out rounded-full"></span>
+      Developer ID
+    </button>
+  </div>
 
-    generateDummyPriceData(m,p){
-      // Generate dummy prices with random walk
-      let pr=[100+Math.random()*50];
-      for(let i=1;i<p;i++){
-        pr.push(Math.max(1,pr[i-1]+(Math.random()-0.5)*2));
-      }
-      return pr;
-    },
+  <script>
+  function signalBoard(){
+    return {
+      selectedTimeframe:'1',
+      markets:[
+        'EUR/USD OTC','GBP/USD OTC','USD/JPY OTC','AUD/USD OTC','USD/CHF OTC','USD/CAD OTC',
+        'BTC/USD OTC','ETH/USD OTC','EUR/USD','GBP/USD','USD/JPY','AUD/USD','USD/CHF','USD/CAD',
+        'EUR/JPY','EUR/GBP','GBP/JPY','NZD/USD'
+      ].map(n=>({name:n,selected:false})),
+      signals:[],
+      formatTime(d){ return d.toTimeString().slice(0,5); },
 
-    simpleMA(d,per){
-      if(d.length<per) return null;
-      return d.slice(-per).reduce((a,b)=>a+b,0)/per;
-    },
-
-    rsi(data, period=14){
-      if(data.length < period+1) return null;
-      let gains=0, losses=0;
-      for(let i=data.length-period; i < data.length; i++){
-        let diff = data[i] - data[i-1];
-        if(diff>0) gains += diff;
-        else losses -= diff;
-      }
-      if(losses === 0) return 100;
-      let rs = gains / losses;
-      return 100 - (100 / (1 + rs));
-    },
-
-    macd(data, fast=12, slow=26, signal=9){
-      // Simple MACD implementation with EMA approximation via SMA for demo
-      if(data.length < slow+signal) return null;
-      const ema = (arr, length) => {
-        let k = 2/(length+1);
-        let emaArray = [arr.slice(0,length).reduce((a,b)=>a+b,0)/length];
-        for(let i=length; i<arr.length; i++){
-          emaArray.push(arr[i]*k + emaArray[emaArray.length-1]*(1-k));
+      generateDummyPriceData(m,p){
+        let pr=[100+Math.random()*50];
+        for(let i=1;i<p;i++){
+          pr.push(Math.max(1,pr[i-1]+(Math.random()-0.5)*2));
         }
-        return emaArray;
-      }
-      let emaFast = ema(data, fast);
-      let emaSlow = ema(data, slow);
-      let macdLine = [];
-      for(let i=0; i<emaSlow.length; i++){
-        macdLine.push(emaFast[i+(slow - fast)] - emaSlow[i]);
-      }
-      let signalLine = ema(macdLine, signal);
-      if(signalLine.length===0) return null;
-      return macdLine[macdLine.length-1] - signalLine[signalLine.length-1];
-    },
+        return pr;
+      },
 
-    generateSignals(){
-      this.signals = [];
-      const tf = this.selectedTimeframe==='60'?'H1':this.selectedTimeframe+'M';
-      let now = new Date();
-      now.setSeconds(0,0);
-      const bars = 30; // next 30 minutes, one per minute
+      simpleMA(d,per){
+        if(d.length<per) return null;
+        return d.slice(-per).reduce((a,b)=>a+b,0)/per;
+      },
 
-      this.markets.forEach(mk=>{
-        if(!mk.selected) return;
+      rsi(data, period=14){
+        if(data.length < period+1) return null;
+        let gains=0, losses=0;
+        for(let i=data.length-period; i < data.length; i++){
+          let diff = data[i] - data[i-1];
+          if(diff>0) gains += diff;
+          else losses -= diff;
+        }
+        if(losses === 0) return 100;
+        let rs = gains / losses;
+        return 100 - (100 / (1 + rs));
+      },
 
-        const price = this.generateDummyPriceData(mk.name, bars+50); // generate more for indicators
+      macd(data, fast=12, slow=26, signal=9){
+        const ema = (arr, length) => {
+          let k = 2/(length+1);
+          let emaArray = [arr.slice(0,length).reduce((a,b)=>a+b,0)/length];
+          for(let i=length; i<arr.length; i++){
+            emaArray.push(arr[i]*k + emaArray[emaArray.length-1]*(1-k));
+          }
+          return emaArray;
+        }
+        if(data.length < slow+signal) return null;
+        let emaFast = ema(data, fast);
+        let emaSlow = ema(data, slow);
+        let macdLine = [];
+        for(let i=0; i<emaSlow.length; i++){
+          macdLine.push(emaFast[i+(slow - fast)] - emaSlow[i]);
+        }
+        let signalLine = ema(macdLine, signal);
+        if(signalLine.length===0) return null;
+        return macdLine[macdLine.length-1] - signalLine[signalLine.length-1];
+      },
 
-        for(let i=0; i<bars; i++){
-          const slice = price.slice(i,i+50);
+      generateSignals(){
+        this.signals = [];
+        const tf = this.selectedTimeframe==='60'?'H1':this.selectedTimeframe+'M';
+        let now = new Date();
+        now.setSeconds(0,0);
+        const bars = 30;
 
-          // Moving Averages
-          const ma5 = this.simpleMA(slice, 5);
-          const ma10 = this.simpleMA(slice, 10);
-          if(ma5 === null || ma10 === null) continue;
+        this.markets.forEach(mk=>{
+          if(!mk.selected) return;
 
-          // RSI
-          const rsiVal = this.rsi(slice, 14);
-          if(rsiVal === null) continue;
+          const price = this.generateDummyPriceData(mk.name, bars+50);
 
-          // MACD Histogram
-          const macdHist = this.macd(slice);
-          if(macdHist === null) continue;
+          for(let i=0; i<bars; i++){
+            const slice = price.slice(i,i+50);
+            const ma5 = this.simpleMA(slice, 5);
+            const ma10 = this.simpleMA(slice, 10);
+            if(ma5 === null || ma10 === null) continue;
+            const rsiVal = this.rsi(slice, 14);
+            if(rsiVal === null) continue;
+            const macdHist = this.macd(slice);
+            if(macdHist === null) continue;
 
-          // Decision Logic:
-          // CALL if: ma5 > ma10 AND RSI between 30-70 AND macdHist > 0
-          // PUT if: ma5 < ma10 AND RSI between 30-70 AND macdHist < 0
-          // Override: if RSI < 30 -> Strong Oversold -> CALL
-          // Override: if RSI > 70 -> Strong Overbought -> PUT
+            let dir = 'PUT';
+            if(rsiVal < 30){
+              dir = 'CALL';
+            } else if(rsiVal > 70){
+              dir = 'PUT';
+            } else if(ma5 > ma10 && macdHist > 0){
+              dir = 'CALL';
+            } else if(ma5 < ma10 && macdHist < 0){
+              dir = 'PUT';
+            }
 
-          let dir = 'PUT';
-          if(rsiVal < 30){
-            dir = 'CALL';
-          } else if(rsiVal > 70){
-            dir = 'PUT';
-          } else if(ma5 > ma10 && macdHist > 0){
-            dir = 'CALL';
-          } else if(ma5 < ma10 && macdHist < 0){
-            dir = 'PUT';
+            const t = new Date(now.getTime() + (i+1)*60000);
+            const text = `${tf};${mk.name.replace(/\//g,'').replace(/\s/g,'')};${this.formatTime(t)};${dir}`;
+            this.signals.push({text, dir});
           }
 
-          const t = new Date(now.getTime() + (i+1)*60000);
-          const text = `${tf};${mk.name.replace(/\//g,'').replace(/\s/g,'')};${this.formatTime(t)};${dir}`;
-          this.signals.push({text, dir});
-        }
+          mk.selected = false;
+        });
 
-        mk.selected = false;
-      });
-
-      this.$nextTick(()=>{
-        if(this.signals.length) document.documentElement.scrollTo({top:document.body.scrollHeight, behavior:'smooth'});
-      });
-    }
-  };
-}
-</script>
+        this.$nextTick(()=>{
+          if(this.signals.length) document.documentElement.scrollTo({top:document.body.scrollHeight, behavior:'smooth'});
+        });
+      }
+    };
+  }
+  </script>
 </body>
 </html>

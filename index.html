@@ -1,202 +1,268 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bn">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>BENZ RAKIB - Quotex Signal Board</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <title>Quotex Signal Terminal - Kali Linux Style</title>
   <style>
-    .title-glow{text-shadow:0 0 10px #34d399,0 0 20px #34d399,0 0 30px #34d399;}
-    @keyframes hueRotate{0%{filter:hue-rotate(0deg);}100%{filter:hue-rotate(360deg);} }
-    .color-cycle{animation:hueRotate 4s linear infinite alternate;}
-    .signal-call{color:#22c55e;font-weight:600;}
-    .signal-put{color:#ef4444;font-weight:600;}
-    @keyframes fadeScaleIn{0%{opacity:0;transform:scale(.8);}100%{opacity:1;transform:scale(1);} }
-    .fade-scale-in{animation:fadeScaleIn .8s ease forwards;}
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      background: #000;
+      color: #00ff00;
+      font-family: 'Share Tech Mono', monospace;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #matrix {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    #terminal {
+      position: relative;
+      z-index: 1;
+      width: 90vw;
+      max-width: 800px;
+      height: 450px;
+      background: rgba(0,0,0,0.9);
+      border: 2px solid #00ff00;
+      border-radius: 8px;
+      box-shadow: 0 0 20px #00ff00;
+      padding: 20px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    #output {
+      flex: 1;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      line-height: 1.4;
+      font-size: 1.1rem;
+    }
+
+    #input-container {
+      margin-top: 10px;
+      width: 90vw;
+      max-width: 800px;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      z-index: 2;
+    }
+
+    #cmd-input {
+      flex: 1;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 1.2rem;
+      padding: 12px 15px;
+      border-radius: 5px;
+      border: 2px solid #00ff00;
+      background: #000;
+      color: #00ff00;
+      outline: none;
+      caret-color: #00ff00;
+      box-shadow: 0 0 10px #00ff00;
+    }
+
+    #send-btn {
+      background: #00ff00;
+      border: none;
+      color: #000;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 1.2rem;
+      padding: 12px 25px;
+      cursor: pointer;
+      border-radius: 5px;
+      box-shadow: 0 0 10px #00ff00;
+      user-select: none;
+      transition: background 0.3s ease;
+    }
+
+    #send-btn:hover {
+      background: #0f0;
+    }
   </style>
 </head>
-<body class="min-h-screen bg-gray-900 text-white flex flex-col items-center py-10 px-4" x-data="{showPopup:true}">
+<body>
 
-  <!-- Popup -->
-  <div x-show="showPopup" x-transition class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-    <div class="bg-gray-800 rounded-xl p-6 w-80 max-w-full relative text-center text-white shadow-lg">
-      <button @click="showPopup=false" class="absolute top-3 right-3 text-gray-400 hover:text-gray-200 font-bold text-xl focus:outline-none" aria-label="Close popup">&times;</button>
-      <p class="text-lg font-semibold fade-scale-in"><!-- Popup -->
-<div x-show="showPopup" x-transition class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-  <div class="bg-gray-800 rounded-xl p-6 w-96 max-w-full relative text-center text-white shadow-lg">
-    <button @click="showPopup=false" class="absolute top-3 right-3 text-gray-400 hover:text-gray-200 font-bold text-xl focus:outline-none" aria-label="Close popup">&times;</button>
+<canvas id="matrix"></canvas>
 
-    <p class="text-base font-semibold fade-scale-in leading-relaxed">
-      বটের একুরেসি ৮০ - ৯৫% করা হয়েছে। <br>
-      ৭ ঘণ্টা পরে BOT এক্সপায়ার হয়ে যাবে। <br>
-      যদি আপনি BOT ইউজ করতে চান তাহলে VIP তে ঢুকতে হবে। <br>
-      VIP তে ঢোকার জন্য সাপোর্ট আইডিতে মেসেজ করুন।
-    </p>
-
-    <button onclick="window.open('https://t.me/BENZ_RAKIB', '_blank')"
-            class="mt-4 inline-flex items-center justify-center px-6 py-2 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white font-semibold text-sm rounded-full shadow hover:scale-105 transition transform">
-      সাপোর্টে মেসেজ করুন
-    </button>
-  </div>
+<div id="terminal" role="main" aria-label="Quotex Signal Terminal">
+  <div id="output">Welcome to <strong>Quotex Signal Terminal</strong> (Kali Linux Style)
+Type <strong>help</strong> for commands.</div>
 </div>
-</p>
-    </div>
-  </div>
 
-  <h1 class="text-4xl font-extrabold mb-8 text-green-400 title-glow">BENZ&nbsp;RAKIB&nbsp;</h1>
+<div id="input-container">
+  <input type="text" id="cmd-input" autocomplete="off" spellcheck="false" placeholder="Type your command here..." />
+  <button id="send-btn" aria-label="Send Command">Send</button>
+</div>
 
-  <div x-data="signalBoard()" class="w-full max-w-6xl bg-gray-800 rounded-2xl shadow-lg p-6">
-    <!-- Timeframe select -->
-    <div class="mb-6">
-      <label for="timeframe" class="block mb-2 font-semibold text-lg">Select Timeframe (Minutes per candle):</label>
-      <select id="timeframe" x-model="selectedTimeframe" class="w-32 bg-gray-700 rounded-lg p-2 text-white focus:outline-none">
-        <option value="1">1</option>
-        <option value="5">5</option>
-        <option value="15">15</option>
-        <option value="30">30</option>
-        <option value="60">60</option>
-      </select>
-    </div>
+<script>
+// MATRIX BACKGROUND
+const canvas = document.getElementById('matrix');
+const ctx = canvas.getContext('2d');
+let width = canvas.width = window.innerWidth;
+let height = canvas.height = window.innerHeight;
+const letters = '01';
+const fontSize = 16;
+const columns = Math.floor(width / fontSize);
+const drops = [];
+for (let i = 0; i < columns; i++) drops[i] = Math.random() * height / fontSize;
 
-    <h3 class="text-xl font-semibold mb-4 color-cycle">SELECT MARKETS</h3>
-
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6 max-h-96 overflow-y-auto pr-2 text-xs">
-      <template x-for="(market,index) in markets" :key="index">
-        <label class="flex items-center space-x-2 bg-gray-700 rounded-lg p-2 cursor-pointer hover:bg-gray-600 transition">
-          <input type="checkbox" x-model="market.selected" class="h-4 w-4 text-green-500 rounded focus:ring-0" />
-          <span x-text="market.name" class="flex-1"></span>
-        </label>
-      </template>
-    </div>
-
-    <button @click="generateSignals" class="w-full py-3 bg-green-600 hover:bg-green-500 rounded-xl text-lg font-semibold transition">Generate Signals (30 min)</button>
-
-    <div x-show="signals.length" x-transition.opacity.duration.500ms class="mt-8 space-y-4 max-h-96 overflow-y-auto">
-      <h3 class="text-xl font-semibold">Generated Signals (next 30 minutes)</h3>
-      <template x-for="(sig,idx) in signals" :key="idx">
-        <div x-transition.scale.duration.400ms class="bg-gray-700 rounded-xl p-4 flex items-center justify-between">
-          <span class="text-lg" :class="sig.dir==='CALL'?'signal-call':'signal-put'" x-text="sig.text"></span>
-        </div>
-      </template>
-    </div>
-  </div>
-
-  <!-- Developer ID Button -->
-  <div class="mt-10 -mb-2 flex justify-center w-full">
-    <button onclick="window.open('https://t.me/TRADERSIAMX', '_blank')"
-            class="relative inline-flex items-center justify-center px-8 py-3 bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 text-white font-semibold text-base rounded-full shadow-lg transition-transform transform hover:scale-105 hover:shadow-yellow-400/40 animate-pulse group overflow-hidden">
-      <span class="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition duration-300 ease-in-out rounded-full"></span>
-      Developer ID
-    </button>
-  </div>
-
-  <script>
-  function signalBoard(){
-    return {
-      selectedTimeframe:'1',
-      markets:[
-        'EUR/USD OTC','GBP/USD OTC','USD/JPY OTC','AUD/USD OTC','USD/CHF OTC','USD/CAD OTC',
-        'BTC/USD OTC','ETH/USD OTC','EUR/USD','GBP/USD','USD/JPY','AUD/USD','USD/CHF','USD/CAD',
-        'EUR/JPY','EUR/GBP','GBP/JPY','NZD/USD'
-      ].map(n=>({name:n,selected:false})),
-      signals:[],
-      formatTime(d){ return d.toTimeString().slice(0,5); },
-
-      generateDummyPriceData(m,p){
-        let pr=[100+Math.random()*50];
-        for(let i=1;i<p;i++){
-          pr.push(Math.max(1,pr[i-1]+(Math.random()-0.5)*2));
-        }
-        return pr;
-      },
-
-      simpleMA(d,per){
-        if(d.length<per) return null;
-        return d.slice(-per).reduce((a,b)=>a+b,0)/per;
-      },
-
-      rsi(data, period=14){
-        if(data.length < period+1) return null;
-        let gains=0, losses=0;
-        for(let i=data.length-period; i < data.length; i++){
-          let diff = data[i] - data[i-1];
-          if(diff>0) gains += diff;
-          else losses -= diff;
-        }
-        if(losses === 0) return 100;
-        let rs = gains / losses;
-        return 100 - (100 / (1 + rs));
-      },
-
-      macd(data, fast=12, slow=26, signal=9){
-        const ema = (arr, length) => {
-          let k = 2/(length+1);
-          let emaArray = [arr.slice(0,length).reduce((a,b)=>a+b,0)/length];
-          for(let i=length; i<arr.length; i++){
-            emaArray.push(arr[i]*k + emaArray[emaArray.length-1]*(1-k));
-          }
-          return emaArray;
-        }
-        if(data.length < slow+signal) return null;
-        let emaFast = ema(data, fast);
-        let emaSlow = ema(data, slow);
-        let macdLine = [];
-        for(let i=0; i<emaSlow.length; i++){
-          macdLine.push(emaFast[i+(slow - fast)] - emaSlow[i]);
-        }
-        let signalLine = ema(macdLine, signal);
-        if(signalLine.length===0) return null;
-        return macdLine[macdLine.length-1] - signalLine[signalLine.length-1];
-      },
-
-      generateSignals(){
-        this.signals = [];
-        const tf = this.selectedTimeframe==='60'?'H1':this.selectedTimeframe+'M';
-        let now = new Date();
-        now.setSeconds(0,0);
-        const bars = 30;
-
-        this.markets.forEach(mk=>{
-          if(!mk.selected) return;
-
-          const price = this.generateDummyPriceData(mk.name, bars+50);
-
-          for(let i=0; i<bars; i++){
-            const slice = price.slice(i,i+50);
-            const ma5 = this.simpleMA(slice, 5);
-            const ma10 = this.simpleMA(slice, 10);
-            if(ma5 === null || ma10 === null) continue;
-            const rsiVal = this.rsi(slice, 14);
-            if(rsiVal === null) continue;
-            const macdHist = this.macd(slice);
-            if(macdHist === null) continue;
-
-            let dir = 'PUT';
-            if(rsiVal < 30){
-              dir = 'CALL';
-            } else if(rsiVal > 70){
-              dir = 'PUT';
-            } else if(ma5 > ma10 && macdHist > 0){
-              dir = 'CALL';
-            } else if(ma5 < ma10 && macdHist < 0){
-              dir = 'PUT';
-            }
-
-            const t = new Date(now.getTime() + (i+1)*60000);
-            const text = `${tf};${mk.name.replace(/\//g,'').replace(/\s/g,'')};${this.formatTime(t)};${dir}`;
-            this.signals.push({text, dir});
-          }
-
-          mk.selected = false;
-        });
-
-        this.$nextTick(()=>{
-          if(this.signals.length) document.documentElement.scrollTo({top:document.body.scrollHeight, behavior:'smooth'});
-        });
-      }
-    };
+function drawMatrix() {
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+  ctx.fillRect(0, 0, width, height);
+  ctx.fillStyle = '#00ff00';
+  ctx.font = fontSize + 'px monospace';
+  for (let i = 0; i < drops.length; i++) {
+    const text = letters.charAt(Math.floor(Math.random() * letters.length));
+    ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+    if (drops[i] * fontSize > height && Math.random() > 0.975) drops[i] = 0;
+    drops[i]++;
   }
-  </script>
+}
+setInterval(drawMatrix, 50);
+window.addEventListener('resize', () => {
+  width = canvas.width = window.innerWidth;
+  height = canvas.height = window.innerHeight;
+});
+
+// TERMINAL LOGIC
+const output = document.getElementById('output');
+const input = document.getElementById('cmd-input');
+const sendBtn = document.getElementById('send-btn');
+
+let market = '';
+let timeframe = '';
+let signalRunning = false;
+let signalInterval;
+let signalCount = 0;
+let maxSignals = 10;
+const signals = ["BUY", "SELL"];
+
+function printLine(text = '') {
+  const div = document.createElement('div');
+  div.innerHTML = text;
+  output.appendChild(div);
+  output.scrollTop = output.scrollHeight;
+}
+
+function generateSignalLine() {
+  const signal = signals[Math.floor(Math.random() * signals.length)];
+  const time = new Date().toLocaleTimeString();
+  const color = signal === 'BUY' ? '#00ff00' : '#ff0000';
+  return `[${time}] ➤ Market: ${market}, TF: ${timeframe} => SIGNAL: <span style="color:${color}; font-weight:bold">${signal}</span>`;
+}
+
+function startSignalLoop() {
+  signalInterval = setInterval(() => {
+    if (signalCount >= maxSignals) {
+      printLine('⚠️ Signal generation complete.');
+      stopSignalLoop();
+      return;
+    }
+    signalCount++;
+    printLine(generateSignalLine());
+  }, 3000);
+}
+
+function stopSignalLoop() {
+  clearInterval(signalInterval);
+  signalRunning = false;
+}
+
+function handleCommand(cmd) {
+  cmd = cmd.trim();
+
+  if (signalRunning && cmd !== 'stop_signal') {
+    printLine('⚠️ Signal running! Stop it first by typing: stop_signal');
+    return;
+  }
+
+  if (cmd === 'help') {
+    printLine(`Available commands:
+- set_market [market_name]  (e.g. set_market EUR/USD)
+- set_timeframe [minutes]   (e.g. set_timeframe 1)
+- start_signal              (begin signal generation)
+- stop_signal               (stop signals)
+- clear                     (clear output)
+- help                      (show help)`);
+    return;
+  }
+
+  if (cmd.startsWith('set_market ')) {
+    market = cmd.slice(11).trim();
+    if (!market) return printLine('❌ Market name required.');
+    printLine(`Market set to: ${market}`);
+    return;
+  }
+
+  if (cmd.startsWith('set_timeframe ')) {
+    const tf = cmd.slice(14).trim();
+    if (!tf || isNaN(tf) || Number(tf) <= 0) {
+      return printLine('❌ Invalid timeframe! Must be a number.');
+    }
+    timeframe = tf + 'm';
+    printLine(`Timeframe set to: ${timeframe}`);
+    return;
+  }
+
+  if (cmd === 'start_signal') {
+    if (!market || !timeframe) return printLine('❌ Set market and timeframe first.');
+    signalCount = 0;
+    signalRunning = true;
+    printLine('✅ Signal generation started...');
+    startSignalLoop();
+    return;
+  }
+
+  if (cmd === 'stop_signal') {
+    stopSignalLoop();
+    printLine('🛑 Signal stopped.');
+    return;
+  }
+
+  if (cmd === 'clear') {
+    output.innerHTML = '';
+    return;
+  }
+
+  printLine(`❓ Unknown command: ${cmd}`);
+}
+
+function sendCommand() {
+  const cmd = input.value.trim();
+  if (cmd !== '') {
+    printLine(`<span style="color:#0f0">root@kali:~$</span> ${cmd}`);
+    handleCommand(cmd);
+    input.value = '';
+  }
+  input.focus();
+}
+
+sendBtn.addEventListener('click', sendCommand);
+input.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    sendCommand();
+    e.preventDefault();
+  }
+});
+</script>
+
 </body>
 </html>

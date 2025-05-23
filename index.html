@@ -1,3 +1,150 @@
+(async function runLicenseCheck() {
+  const waitForDOM = () => new Promise(res => {
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", res);
+    } else {
+      res();
+    }
+  });
+
+  const loadScript = src => new Promise(res => {
+    if (document.querySelector(`script[src="${src}"]`)) return res();
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = res;
+    document.head.appendChild(s);
+  });
+
+  await waitForDOM();
+  await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
+  await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js');
+
+  if (!window.firebase?.apps?.length) {
+    firebase.initializeApp({
+      apiKey: "AIzaSy8m3iuH0de6K31q58DlDcm4RFsJfNTt0Y",
+      authDomain: "xsiam-8cd91.firebaseapp.com",
+      databaseURL: "https://xsiam-8cd91-default-rtdb.firebaseio.com",
+      projectId: "xsiam-8cd91",
+      storageBucket: "xsiam-8cd91.appspot.com",
+      messagingSenderId: "449795686178",
+      appId: "1:449795686178:web:67631b23b88be6a0eaef7b",
+      measurementId: "G-C987LSZV4G"
+    });
+  }
+
+  const db = firebase.firestore();
+
+  if (document.getElementById("licenseModalBackdrop")) return;
+
+  const html = `
+  <div id="licenseModalBackdrop" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.3);display:flex;justify-content:center;align-items:center;z-index:99999;">
+    <div id="licenseModal" style="background:#fff;padding:30px;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,0.25);width:360px;text-align:center;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
+      <h1 style="margin:0;font-size:24px;color:#222;">UI Script</h1>
+      <h2 style="margin-top:6px;font-size:16px;color:#28a745;">By Trader Siam X</h2>
+      <div style="font-size:14px;margin:18px 0 4px;color:#333;">Enter your license key to continue</div>
+      <div style="font-size:13px;color:black;margin-bottom:14px;margin-top:4px;">This will authorize your device for system access</div>
+      <input type="text" id="licenseKey" placeholder="Enter license key..." style="width:100%;padding:12px;border-radius:8px;border:1px solid #bbb;margin-bottom:18px;font-size:14px;outline:none;" />
+      <div style="display:flex;justify-content:space-between;">
+        <button id="verifyBtn" style="width:48%;padding:10px;font-size:14px;border:none;border-radius:8px;cursor:pointer;background:linear-gradient(to right,#28a745,#218838);color:white;">Verify License</button>
+        <button id="cancelBtn" style="width:48%;padding:10px;font-size:14px;border:none;border-radius:8px;cursor:pointer;background:linear-gradient(to right,#dc3545,#c82333);color:white;">Cancel</button>
+      </div>
+      <div id="message" style="margin-top:15px;font-size:14px;font-weight:bold;"></div>
+      <div style="margin-top:20px;font-size:13px;color:#555;">
+        <div style="margin-top:15px;display:flex;justify-content:center;align-items:center;gap:6px;">
+          <img src="https://cdn-icons-png.flaticon.com/512/2111/2111646.png" style="width:18px;" />
+          <a href="https://t.me/TRADERSIAMX" target="_blank" style="color:#007bff;text-decoration:none;">@TRADERSIAMX</a>
+        </div>
+        <div style="margin-top:5px;">By Trader Siam X</div>
+      </div>
+    </div>
+  </div>
+  <style>@keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}</style>
+  `;
+
+  const wrapper = document.createElement("div");
+  wrapper.innerHTML = html;
+  document.body.appendChild(wrapper);
+
+  const inputEl = document.getElementById("licenseKey");
+  const verifyBtn = document.getElementById("verifyBtn");
+  const cancelBtn = document.getElementById("cancelBtn");
+  const messageEl = document.getElementById("message");
+  const modalBackdrop = document.getElementById("licenseModalBackdrop");
+
+  const getDeviceId = () => {
+    let id = localStorage.getItem("deviceId");
+    if (!id) {
+      id = "device-" + Math.random().toString(36).substr(2, 9);
+      localStorage.setItem("deviceId", id);
+    }
+    return id;
+  };
+
+  verifyBtn.onclick = async () => {
+    const val = inputEl.value.trim();
+    messageEl.textContent = "";
+    if (!val) {
+      messageEl.textContent = "❗ Please enter your license key";
+      messageEl.style.color = "#dc3545";
+      return;
+    }
+    messageEl.innerHTML = '<span style="border:2px solid #fff;border-top:2px solid #ccc;border-radius:50%;width:16px;height:16px;animation:spin 0.6s linear infinite;display:inline-block;margin-right:6px;"></span>Verifying...';
+    verifyBtn.disabled = true;
+
+    try {
+      const snap = await db.collection("licenses").where("key", "==", val).limit(1).get();
+      if (snap.empty) {
+        messageEl.textContent = "❌ License Key Not Found!";
+        messageEl.style.color = "#dc3545";
+      } else {
+        const doc = snap.docs[0];
+        const data = doc.data();
+        if (data.active) {
+          messageEl.textContent = "✅ License Verified Successfully!";
+          messageEl.style.color = "#28a745";
+
+          const deviceId = getDeviceId();
+          const devicesRef = db.collection("devices");
+          const existing = await devicesRef.where("deviceId", "==", deviceId).limit(1).get();
+
+          if (existing.empty) {
+            await devicesRef.add({
+              deviceId,
+              licenseKey: val,
+              verifiedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+          } else {
+            await devicesRef.doc(existing.docs[0].id).update({
+              licenseKey: val,
+              verifiedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+          }
+
+          setTimeout(() => {
+            modalBackdrop.remove();
+            document.dispatchEvent(new CustomEvent("license-verified"));
+          }, 1000);
+        } else {
+          messageEl.textContent = "❌ License is inactive!";
+          messageEl.style.color = "#dc3545";
+        }
+      }
+    } catch (e) {
+      console.error(e);
+      messageEl.textContent = "⚠️ Error verifying license, try again later.";
+      messageEl.style.color = "#dc3545";
+    } finally {
+      verifyBtn.disabled = false;
+    }
+  };
+
+  cancelBtn.onclick = () => {
+    modalBackdrop.remove();
+  };
+
+  inputEl.focus();
+})();
+
 <!DOCTYPE html>
 <html lang="bn">
 <head>
@@ -279,149 +426,3 @@ Type <strong>help</strong> for commands.
 
 </body>
 </html>
-(async function runLicenseCheck() {
-  const waitForDOM = () => new Promise(res => {
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", res);
-    } else {
-      res();
-    }
-  });
-
-  const loadScript = src => new Promise(res => {
-    if (document.querySelector(`script[src="${src}"]`)) return res();
-    const s = document.createElement('script');
-    s.src = src;
-    s.onload = res;
-    document.head.appendChild(s);
-  });
-
-  await waitForDOM();
-  await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
-  await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js');
-
-  if (!window.firebase?.apps?.length) {
-    firebase.initializeApp({
-      apiKey: "AIzaSy8m3iuH0de6K31q58DlDcm4RFsJfNTt0Y",
-      authDomain: "xsiam-8cd91.firebaseapp.com",
-      databaseURL: "https://xsiam-8cd91-default-rtdb.firebaseio.com",
-      projectId: "xsiam-8cd91",
-      storageBucket: "xsiam-8cd91.appspot.com",
-      messagingSenderId: "449795686178",
-      appId: "1:449795686178:web:67631b23b88be6a0eaef7b",
-      measurementId: "G-C987LSZV4G"
-    });
-  }
-
-  const db = firebase.firestore();
-
-  if (document.getElementById("licenseModalBackdrop")) return;
-
-  const html = `
-  <div id="licenseModalBackdrop" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.3);display:flex;justify-content:center;align-items:center;z-index:99999;">
-    <div id="licenseModal" style="background:#fff;padding:30px;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,0.25);width:360px;text-align:center;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
-      <h1 style="margin:0;font-size:24px;color:#222;">UI Script</h1>
-      <h2 style="margin-top:6px;font-size:16px;color:#28a745;">By Trader Siam X</h2>
-      <div style="font-size:14px;margin:18px 0 4px;color:#333;">Enter your license key to continue</div>
-      <div style="font-size:13px;color:black;margin-bottom:14px;margin-top:4px;">This will authorize your device for system access</div>
-      <input type="text" id="licenseKey" placeholder="Enter license key..." style="width:100%;padding:12px;border-radius:8px;border:1px solid #bbb;margin-bottom:18px;font-size:14px;outline:none;" />
-      <div style="display:flex;justify-content:space-between;">
-        <button id="verifyBtn" style="width:48%;padding:10px;font-size:14px;border:none;border-radius:8px;cursor:pointer;background:linear-gradient(to right,#28a745,#218838);color:white;">Verify License</button>
-        <button id="cancelBtn" style="width:48%;padding:10px;font-size:14px;border:none;border-radius:8px;cursor:pointer;background:linear-gradient(to right,#dc3545,#c82333);color:white;">Cancel</button>
-      </div>
-      <div id="message" style="margin-top:15px;font-size:14px;font-weight:bold;"></div>
-      <div style="margin-top:20px;font-size:13px;color:#555;">
-        <div style="margin-top:15px;display:flex;justify-content:center;align-items:center;gap:6px;">
-          <img src="https://cdn-icons-png.flaticon.com/512/2111/2111646.png" style="width:18px;" />
-          <a href="https://t.me/TRADERSIAMX" target="_blank" style="color:#007bff;text-decoration:none;">@TRADERSIAMX</a>
-        </div>
-        <div style="margin-top:5px;">By Trader Siam X</div>
-      </div>
-    </div>
-  </div>
-  <style>@keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}</style>
-  `;
-
-  const wrapper = document.createElement("div");
-  wrapper.innerHTML = html;
-  document.body.appendChild(wrapper);
-
-  const inputEl = document.getElementById("licenseKey");
-  const verifyBtn = document.getElementById("verifyBtn");
-  const cancelBtn = document.getElementById("cancelBtn");
-  const messageEl = document.getElementById("message");
-  const modalBackdrop = document.getElementById("licenseModalBackdrop");
-
-  const getDeviceId = () => {
-    let id = localStorage.getItem("deviceId");
-    if (!id) {
-      id = "device-" + Math.random().toString(36).substr(2, 9);
-      localStorage.setItem("deviceId", id);
-    }
-    return id;
-  };
-
-  verifyBtn.onclick = async () => {
-    const val = inputEl.value.trim();
-    messageEl.textContent = "";
-    if (!val) {
-      messageEl.textContent = "❗ Please enter your license key";
-      messageEl.style.color = "#dc3545";
-      return;
-    }
-    messageEl.innerHTML = '<span style="border:2px solid #fff;border-top:2px solid #ccc;border-radius:50%;width:16px;height:16px;animation:spin 0.6s linear infinite;display:inline-block;margin-right:6px;"></span>Verifying...';
-    verifyBtn.disabled = true;
-
-    try {
-      const snap = await db.collection("licenses").where("key", "==", val).limit(1).get();
-      if (snap.empty) {
-        messageEl.textContent = "❌ License Key Not Found!";
-        messageEl.style.color = "#dc3545";
-      } else {
-        const doc = snap.docs[0];
-        const data = doc.data();
-        if (data.active) {
-          messageEl.textContent = "✅ License Verified Successfully!";
-          messageEl.style.color = "#28a745";
-
-          const deviceId = getDeviceId();
-          const devicesRef = db.collection("devices");
-          const existing = await devicesRef.where("deviceId", "==", deviceId).limit(1).get();
-
-          if (existing.empty) {
-            await devicesRef.add({
-              deviceId,
-              licenseKey: val,
-              verifiedAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-          } else {
-            await devicesRef.doc(existing.docs[0].id).update({
-              licenseKey: val,
-              verifiedAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-          }
-
-          setTimeout(() => {
-            modalBackdrop.remove();
-            document.dispatchEvent(new CustomEvent("license-verified"));
-          }, 1000);
-        } else {
-          messageEl.textContent = "❌ License is inactive!";
-          messageEl.style.color = "#dc3545";
-        }
-      }
-    } catch (e) {
-      console.error(e);
-      messageEl.textContent = "⚠️ Error verifying license, try again later.";
-      messageEl.style.color = "#dc3545";
-    } finally {
-      verifyBtn.disabled = false;
-    }
-  };
-
-  cancelBtn.onclick = () => {
-    modalBackdrop.remove();
-  };
-
-  inputEl.focus();
-})();
